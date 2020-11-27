@@ -26,6 +26,34 @@ module.exports = {
         }).catch(err => {
             res.send({ errCode: Config.errCodeError, message: Config.errMessage });
         });
+    },
+
+    signUp: (req, res) => {
+        Auth.find({
+            email: req.body.email,
+            isDeleted: 0
+        }).then(authCredentials => {
+            if (authCredentials.length == 0) {
+                let auth = new Auth({
+                    email: req.body.email,
+                    password: req.body.password,
+                    role: 2
+                });
+                auth.save().then(result => {
+                    if (result) {
+                        res.send({ errCode: Config.errCodeSuccess, message: "Signup successfully..!! Kindly login to continue" });
+                    } else {
+                        res.send({ errCode: Config.errCodeError, message: Config.errMessage });
+                    }
+                }).catch(err => {
+                    res.send({ errCode: Config.errCodeError, message: Config.errMessage });
+                });
+            } else if (authCredentials.length > 0) {
+                res.send({ errCode: Config.errCodeError, message: "Email is already in use with system..!!" });
+            }
+        }).catch(err => {
+            res.send({ errCode: Config.errCodeError, message: Config.errMessage });
+        });
     }
 
 }

@@ -6,7 +6,7 @@ module.exports = {
     getAllMovies: (req, res) => {
         Movie.find({
             isDeleted: 0
-        }).limit().skip().sort().then(movies => {
+        }).populate("dates.timeSlots").limit(Number.parseInt(req.params.pageSize)).skip(Number.parseInt(req.params.pageNo * req.params.pageSize)).sort({ _id: -1 }).then(movies => {
             if (movies.length == 0) {
                 res.send({ errCode: Config.errCodeNoRecordFound, message: "No record found..!!", data: [] });
             } else if (movies.length > 0) {
@@ -19,7 +19,7 @@ module.exports = {
 
     getMovieById: (req, res) => {
         let movieId = req.params.movieId;
-        Movie.findById(movieId).then(movie => {
+        Movie.findById(movieId).populate("dates.timeSlots").then(movie => {
             if (movie) {
                 res.send({ errCode: Config.errCodeSuccess, message: "", data: movie });
             } else {
@@ -73,6 +73,35 @@ module.exports = {
         }).then(result => {
             if (result) {
                 res.send({ errCode: Config.errCodeSuccess, message: "Movie deleted successfully..!!" });
+            } else {
+                res.send({ errCode: Config.errCodeError, message: Config.errMessage });
+            }
+        }).catch(err => {
+            res.send({ errCode: Config.errCodeError, message: Config.errMessage });
+        });
+    },
+
+    addMovieDateAndTimeSlots: (req, res) => {
+        let movieId = req.params.movieId;
+        Movie.findById(movieId).then(movie => {
+            let movieDates;
+            if ('dates' in movie) {
+                movieDates = movie.dates;
+                movieDates.push({
+                    date: req.body.date,
+                    timeSlots: req.body.timeSlots
+                });
+            } else {
+                movieDates = [{
+                    date: req.body.date,
+                    timeSlots: req.body.timeSlots
+                }];
+            }
+            movie.dates = movieDates;
+            return movie.save();
+        }).then(result => {
+            if (result) {
+                res.send({ errCode: Config.errCodeSuccess, message: "Movie updates successfully..!!" });
             } else {
                 res.send({ errCode: Config.errCodeError, message: Config.errMessage });
             }
